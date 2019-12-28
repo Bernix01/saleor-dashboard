@@ -15,31 +15,39 @@ import StatusLabel from "@saleor/components/StatusLabel";
 import TablePagination from "@saleor/components/TablePagination";
 import { translateBoolean } from "@saleor/intl";
 import { maybe, renderCollection } from "@saleor/misc";
-import { ListProps } from "@saleor/types";
+import { ListProps, SortPage } from "@saleor/types";
+import { PluginListUrlSortField } from "@saleor/plugins/urls";
+import TableCellHeader from "@saleor/components/TableCellHeader";
+import { getArrowDirection } from "@saleor/utils/sort";
 import { Plugins_plugins_edges_node } from "../../types/Plugins";
 
-export interface PluginListProps extends ListProps {
+export interface PluginListProps
+  extends ListProps,
+    SortPage<PluginListUrlSortField> {
   plugins: Plugins_plugins_edges_node[];
 }
 
-const useStyles = makeStyles(theme => ({
-  [theme.breakpoints.up("lg")]: {
-    colAction: {
-      "& svg": {
-        color: theme.palette.primary.main
+const useStyles = makeStyles(
+  theme => ({
+    [theme.breakpoints.up("lg")]: {
+      colAction: {
+        "& svg": {
+          color: theme.palette.primary.main
+        },
+        textAlign: "right" as "right"
       },
-      textAlign: "right" as "right"
+      colActive: {},
+      colName: {}
     },
+    colAction: {},
     colActive: {},
-    colName: {}
-  },
-  colAction: {},
-  colActive: {},
-  colName: {},
-  link: {
-    cursor: "pointer"
-  }
-}));
+    colName: {},
+    link: {
+      cursor: "pointer"
+    }
+  }),
+  { name: "PluginsList" }
+);
 
 const numberOfColumns = 4;
 
@@ -50,7 +58,9 @@ const PluginList: React.FC<PluginListProps> = props => {
     disabled,
     onNextPage,
     pageInfo,
+    sort,
     onRowClick,
+    onSort,
     onUpdateListSettings,
     onPreviousPage
   } = props;
@@ -61,18 +71,35 @@ const PluginList: React.FC<PluginListProps> = props => {
     <Card>
       <ResponsiveTable>
         <TableHead>
-          <TableCell className={classes.colName}>
+          <TableCellHeader
+            direction={
+              sort.sort === PluginListUrlSortField.name
+                ? getArrowDirection(sort.asc)
+                : undefined
+            }
+            arrowPosition="right"
+            onClick={() => onSort(PluginListUrlSortField.name)}
+            className={classes.colName}
+          >
             {intl.formatMessage({
               defaultMessage: "Name",
               description: "plugin name"
             })}
-          </TableCell>
-          <TableCell className={classes.colActive}>
+          </TableCellHeader>
+          <TableCellHeader
+            direction={
+              sort.sort === PluginListUrlSortField.active
+                ? getArrowDirection(sort.asc)
+                : undefined
+            }
+            onClick={() => onSort(PluginListUrlSortField.active)}
+            className={classes.colActive}
+          >
             {intl.formatMessage({
               defaultMessage: "Active",
               description: "plugin status"
             })}
-          </TableCell>
+          </TableCellHeader>
           <TableCell className={classes.colAction}>
             {intl.formatMessage({
               defaultMessage: "Action",
@@ -98,36 +125,34 @@ const PluginList: React.FC<PluginListProps> = props => {
         <TableBody>
           {renderCollection(
             plugins,
-            plugin => {
-              return (
-                <TableRow
-                  hover={!!plugin}
-                  className={!!plugin ? classes.link : undefined}
-                  onClick={plugin ? onRowClick(plugin.id) : undefined}
-                  key={plugin ? plugin.id : "skeleton"}
-                >
-                  <TableCell className={classes.colName}>
-                    {maybe<React.ReactNode>(() => plugin.name, <Skeleton />)}
-                  </TableCell>
-                  <TableCell className={classes.colActive}>
-                    {maybe<React.ReactNode>(
-                      () => (
-                        <StatusLabel
-                          label={translateBoolean(plugin.active, intl)}
-                          status={plugin.active ? "success" : "error"}
-                        />
-                      ),
-                      <Skeleton />
-                    )}
-                  </TableCell>
-                  <TableCell className={classes.colAction}>
-                    <div onClick={plugin ? onRowClick(plugin.id) : undefined}>
-                      <EditIcon />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            },
+            plugin => (
+              <TableRow
+                hover={!!plugin}
+                className={!!plugin ? classes.link : undefined}
+                onClick={plugin ? onRowClick(plugin.id) : undefined}
+                key={plugin ? plugin.id : "skeleton"}
+              >
+                <TableCell className={classes.colName}>
+                  {maybe<React.ReactNode>(() => plugin.name, <Skeleton />)}
+                </TableCell>
+                <TableCell className={classes.colActive}>
+                  {maybe<React.ReactNode>(
+                    () => (
+                      <StatusLabel
+                        label={translateBoolean(plugin.active, intl)}
+                        status={plugin.active ? "success" : "error"}
+                      />
+                    ),
+                    <Skeleton />
+                  )}
+                </TableCell>
+                <TableCell className={classes.colAction}>
+                  <div onClick={plugin ? onRowClick(plugin.id) : undefined}>
+                    <EditIcon />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ),
             () => (
               <TableRow>
                 <TableCell colSpan={numberOfColumns}>

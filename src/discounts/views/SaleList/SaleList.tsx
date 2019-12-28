@@ -19,19 +19,22 @@ import usePaginator, {
 } from "@saleor/hooks/usePaginator";
 import useShop from "@saleor/hooks/useShop";
 import { commonMessages, sectionNames } from "@saleor/intl";
-import { getMutationState, maybe } from "@saleor/misc";
+import { maybe } from "@saleor/misc";
 import { ListViews } from "@saleor/types";
+import { getSortParams } from "@saleor/utils/sort";
+import createSortHandler from "@saleor/utils/handlers/sortHandler";
+import createDialogActionHandlers from "@saleor/utils/handlers/dialogActionHandlers";
 import SaleListPage from "../../components/SaleListPage";
 import { TypedSaleBulkDelete } from "../../mutations";
-import { TypedSaleList } from "../../queries";
+import { useSaleListQuery } from "../../queries";
 import { SaleBulkDelete } from "../../types/SaleBulkDelete";
 import {
   saleAddUrl,
-  saleListUrl,
-  SaleListUrlDialog,
   SaleListUrlFilters,
   SaleListUrlQueryParams,
-  saleUrl
+  saleUrl,
+  saleListUrl,
+  SaleListUrlDialog
 } from "../../urls";
 import {
   areFiltersApplied,
@@ -41,6 +44,7 @@ import {
   getFilterVariables,
   saveFilterTab
 } from "./filter";
+import { getSortQueryVariables } from "./sort";
 
 interface SaleListProps {
   params: SaleListUrlQueryParams;
@@ -58,6 +62,20 @@ export const SaleList: React.FC<SaleListProps> = ({ params }) => {
     ListViews.SALES_LIST
   );
   const intl = useIntl();
+
+  const paginationState = createPaginationState(settings.rowNumber, params);
+  const queryVariables = React.useMemo(
+    () => ({
+      ...paginationState,
+      filter: getFilterVariables(params),
+      sort: getSortQueryVariables(params)
+    }),
+    [params]
+  );
+  const { data, loading, refetch } = useSaleListQuery({
+    displayLoader: true,
+    variables: queryVariables
+  });
 
   const tabs = getFilterTabs();
 
@@ -79,24 +97,10 @@ export const SaleList: React.FC<SaleListProps> = ({ params }) => {
     );
   };
 
-  const closeModal = () =>
-    navigate(
-      saleListUrl({
-        ...params,
-        action: undefined,
-        ids: undefined
-      }),
-      true
-    );
-
-  const openModal = (action: SaleListUrlDialog, ids?: string[]) =>
-    navigate(
-      saleListUrl({
-        ...params,
-        action,
-        ids
-      })
-    );
+  const [openModal, closeModal] = createDialogActionHandlers<
+    SaleListUrlDialog,
+    SaleListUrlQueryParams
+  >(navigate, saleListUrl, params);
 
   const handleTabChange = (tab: number) => {
     reset();
@@ -119,140 +123,119 @@ export const SaleList: React.FC<SaleListProps> = ({ params }) => {
     handleTabChange(tabs.length + 1);
   };
 
-  const paginationState = createPaginationState(settings.rowNumber, params);
-  const queryVariables = React.useMemo(
-    () => ({
-      ...paginationState,
-      filter: getFilterVariables(params)
-    }),
-    [params]
-  );
-
   const canOpenBulkActionDialog = maybe(() => params.ids.length > 0);
 
-  return (
-    <TypedSaleList displayLoader variables={queryVariables}>
-      {({ data, loading, refetch }) => {
-        const { loadNextPage, loadPreviousPage, pageInfo } = paginate(
-          maybe(() => data.sales.pageInfo),
-          paginationState,
-          params
-        );
+  const { loadNextPage, loadPreviousPage, pageInfo } = paginate(
+    maybe(() => data.sales.pageInfo),
+    paginationState,
+    params
+  );
 
-        const handleSaleBulkDelete = (data: SaleBulkDelete) => {
-          if (data.saleBulkDelete.errors.length === 0) {
-            notify({
-              text: intl.formatMessage(commonMessages.savedChanges)
-            });
-            reset();
-            closeModal();
-            refetch();
-          }
-        };
+  const handleSaleBulkDelete = (data: SaleBulkDelete) => {
+    if (data.saleBulkDelete.errors.length === 0) {
+      notify({
+        text: intl.formatMessage(commonMessages.savedChanges)
+      });
+      reset();
+      closeModal();
+      refetch();
+    }
+  };
+
+  const handleSort = createSortHandler(navigate, saleListUrl, params);
+
+  return (
+    <TypedSaleBulkDelete onCompleted={handleSaleBulkDelete}>
+      {(saleBulkDelete, saleBulkDeleteOpts) => {
+        const onSaleBulkDelete = () =>
+          saleBulkDelete({
+            variables: {
+              ids: params.ids
+            }
+          });
 
         return (
-          <TypedSaleBulkDelete onCompleted={handleSaleBulkDelete}>
-            {(saleBulkDelete, saleBulkDeleteOpts) => {
-              const bulkRemoveTransitionState = getMutationState(
-                saleBulkDeleteOpts.called,
-                saleBulkDeleteOpts.loading,
-                maybe(() => saleBulkDeleteOpts.data.saleBulkDelete.errors)
-              );
-              const onSaleBulkDelete = () =>
-                saleBulkDelete({
-                  variables: {
-                    ids: params.ids
+          <>
+            <WindowTitle title={intl.formatMessage(sectionNames.sales)} />
+            <SaleListPage
+              currentTab={currentTab}
+              initialSearch={params.query || ""}
+              onSearchChange={query => changeFilterField({ query })}
+              onAll={() => navigate(saleListUrl())}
+              onTabChange={handleTabChange}
+              onTabDelete={() => openModal("delete-search")}
+              onTabSave={() => openModal("save-search")}
+              tabs={tabs.map(tab => tab.name)}
+              defaultCurrency={maybe(() => shop.defaultCurrency)}
+              sales={maybe(() => data.sales.edges.map(edge => edge.node))}
+              settings={settings}
+              disabled={loading}
+              pageInfo={pageInfo}
+              onAdd={() => navigate(saleAddUrl)}
+              onNextPage={loadNextPage}
+              onPreviousPage={loadPreviousPage}
+              onSort={handleSort}
+              onUpdateListSettings={updateListSettings}
+              onRowClick={id => () => navigate(saleUrl(id))}
+              isChecked={isSelected}
+              selected={listElements.length}
+              sort={getSortParams(params)}
+              toggle={toggle}
+              toggleAll={toggleAll}
+              toolbar={
+                <IconButton
+                  color="primary"
+                  onClick={() =>
+                    openModal("remove", {
+                      ids: listElements
+                    })
                   }
-                });
-
-              return (
-                <>
-                  <WindowTitle title={intl.formatMessage(sectionNames.sales)} />
-                  <SaleListPage
-                    currentTab={currentTab}
-                    initialSearch={params.query || ""}
-                    onSearchChange={query => changeFilterField({ query })}
-                    onAll={() => navigate(saleListUrl())}
-                    onTabChange={handleTabChange}
-                    onTabDelete={() => openModal("delete-search")}
-                    onTabSave={() => openModal("save-search")}
-                    tabs={tabs.map(tab => tab.name)}
-                    defaultCurrency={maybe(() => shop.defaultCurrency)}
-                    sales={maybe(() => data.sales.edges.map(edge => edge.node))}
-                    settings={settings}
-                    disabled={loading}
-                    pageInfo={pageInfo}
-                    onAdd={() => navigate(saleAddUrl)}
-                    onNextPage={loadNextPage}
-                    onPreviousPage={loadPreviousPage}
-                    onUpdateListSettings={updateListSettings}
-                    onRowClick={id => () => navigate(saleUrl(id))}
-                    isChecked={isSelected}
-                    selected={listElements.length}
-                    toggle={toggle}
-                    toggleAll={toggleAll}
-                    toolbar={
-                      <IconButton
-                        color="primary"
-                        onClick={() =>
-                          navigate(
-                            saleListUrl({
-                              action: "remove",
-                              ids: listElements
-                            })
-                          )
-                        }
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    }
+                >
+                  <DeleteIcon />
+                </IconButton>
+              }
+            />
+            <ActionDialog
+              confirmButtonState={saleBulkDeleteOpts.status}
+              onClose={closeModal}
+              onConfirm={onSaleBulkDelete}
+              open={params.action === "remove" && canOpenBulkActionDialog}
+              title={intl.formatMessage({
+                defaultMessage: "Delete Sales",
+                description: "dialog header"
+              })}
+              variant="delete"
+            >
+              {canOpenBulkActionDialog && (
+                <DialogContentText>
+                  <FormattedMessage
+                    defaultMessage="Are you sure you want to delete {counter,plural,one{this sale} other{{displayQuantity} sales}}?"
+                    description="dialog content"
+                    values={{
+                      counter: params.ids.length,
+                      displayQuantity: <strong>{params.ids.length}</strong>
+                    }}
                   />
-                  <ActionDialog
-                    confirmButtonState={bulkRemoveTransitionState}
-                    onClose={closeModal}
-                    onConfirm={onSaleBulkDelete}
-                    open={params.action === "remove" && canOpenBulkActionDialog}
-                    title={intl.formatMessage({
-                      defaultMessage: "Delete Sales",
-                      description: "dialog header"
-                    })}
-                    variant="delete"
-                  >
-                    {canOpenBulkActionDialog && (
-                      <DialogContentText>
-                        <FormattedMessage
-                          defaultMessage="Are you sure you want to delete {counter,plural,one{this sale} other{{displayQuantity} sales}}?"
-                          description="dialog content"
-                          values={{
-                            counter: params.ids.length,
-                            displayQuantity: (
-                              <strong>{params.ids.length}</strong>
-                            )
-                          }}
-                        />
-                      </DialogContentText>
-                    )}
-                  </ActionDialog>
-                  <SaveFilterTabDialog
-                    open={params.action === "save-search"}
-                    confirmButtonState="default"
-                    onClose={closeModal}
-                    onSubmit={handleTabSave}
-                  />
-                  <DeleteFilterTabDialog
-                    open={params.action === "delete-search"}
-                    confirmButtonState="default"
-                    onClose={closeModal}
-                    onSubmit={handleTabDelete}
-                    tabName={maybe(() => tabs[currentTab - 1].name, "...")}
-                  />
-                </>
-              );
-            }}
-          </TypedSaleBulkDelete>
+                </DialogContentText>
+              )}
+            </ActionDialog>
+            <SaveFilterTabDialog
+              open={params.action === "save-search"}
+              confirmButtonState="default"
+              onClose={closeModal}
+              onSubmit={handleTabSave}
+            />
+            <DeleteFilterTabDialog
+              open={params.action === "delete-search"}
+              confirmButtonState="default"
+              onClose={closeModal}
+              onSubmit={handleTabDelete}
+              tabName={maybe(() => tabs[currentTab - 1].name, "...")}
+            />
+          </>
         );
       }}
-    </TypedSaleList>
+    </TypedSaleBulkDelete>
   );
 };
 export default SaleList;

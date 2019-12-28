@@ -7,30 +7,37 @@ import {
   Filters,
   Pagination,
   SingleAction,
-  TabActionDialog
+  TabActionDialog,
+  Sort
 } from "../types";
 
-export const webhooksSection = "/webhooks/";
+export const webhookSection = "/webhooks/";
 
-export const webhooksListPath = webhooksSection;
+export const webhookListPath = webhookSection;
 export enum WebhookListUrlFiltersEnum {
   query = "query"
 }
 export type WebhookListUrlFilters = Filters<WebhookListUrlFiltersEnum>;
 export type WebhookListUrlDialog = "remove" | TabActionDialog;
-export type WebhooksListUrlQueryParams = ActiveTab &
-  WebhookListUrlFilters &
+export enum WebhookListUrlSortField {
+  name = "name",
+  serviceAccount = "account"
+}
+export type WebhookListUrlSort = Sort<WebhookListUrlSortField>;
+export type WebhookListUrlQueryParams = ActiveTab &
   Dialog<WebhookListUrlDialog> &
   Pagination &
-  SingleAction;
-export const webhooksListUrl = (params?: WebhooksListUrlQueryParams) =>
-  webhooksListPath + "?" + stringifyQs(params);
+  SingleAction &
+  WebhookListUrlFilters &
+  WebhookListUrlSort;
+export const webhookListUrl = (params?: WebhookListUrlQueryParams) =>
+  webhookListPath + "?" + stringifyQs(params);
 
-export const webhooksPath = (id: string) => urlJoin(webhooksSection, id);
+export const webhookPath = (id: string) => urlJoin(webhookSection, id);
 export type WebhookUrlDialog = "remove";
-export type WebhooksUrlQueryParams = Dialog<WebhookUrlDialog> & SingleAction;
-export const webhooksUrl = (id: string, params?: WebhooksUrlQueryParams) =>
-  webhooksPath(encodeURIComponent(id)) + "?" + stringifyQs(params);
+export type WebhookUrlQueryParams = Dialog<WebhookUrlDialog> & SingleAction;
+export const webhookUrl = (id: string, params?: WebhookUrlQueryParams) =>
+  webhookPath(encodeURIComponent(id)) + "?" + stringifyQs(params);
 
-export const webhooksAddPath = urlJoin(webhooksSection, "add");
-export const webhooksAddUrl = webhooksAddPath;
+export const webhookAddPath = urlJoin(webhookSection, "add");
+export const webhookAddUrl = webhookAddPath;

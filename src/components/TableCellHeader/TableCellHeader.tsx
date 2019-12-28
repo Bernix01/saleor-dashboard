@@ -5,46 +5,55 @@ import React from "react";
 
 import ArrowSort from "../../icons/ArrowSort";
 
-const useStyles = makeStyles(theme => ({
-  arrow: {
-    transition: theme.transitions.duration.short + "ms"
-  },
-  arrowLeft: {
-    marginLeft: -24
-  },
-  arrowUp: {
-    transform: "rotate(180deg)"
-  },
-  label: {
-    alignSelf: "center",
-    display: "inline-block"
-  },
-  labelContainer: {
-    "&:hover": {
+const useStyles = makeStyles(
+  theme => ({
+    arrow: {
+      transition: theme.transitions.duration.short + "ms"
+    },
+    arrowLeft: {
+      marginLeft: -24
+    },
+    arrowUp: {
+      transform: "rotate(180deg)"
+    },
+    disableClick: {
+      "&&": {
+        cursor: "unset"
+      }
+    },
+    label: {
+      alignSelf: "center",
+      display: "inline-block"
+    },
+    labelContainer: {
+      "&:hover": {
+        color: theme.palette.text.primary
+      },
+      display: "flex",
+      height: 24
+    },
+    labelContainerActive: {
       color: theme.palette.text.primary
     },
-    display: "flex",
-    height: 24
-  },
-  labelContainerActive: {
-    color: theme.palette.text.primary
-  },
-  labelContainerCenter: {
-    justifyContent: "center"
-  },
-  labelContainerRight: {
-    justifyContent: "flex-end"
-  },
-  root: {
-    cursor: "pointer"
-  }
-}));
+    labelContainerCenter: {
+      justifyContent: "center"
+    },
+    labelContainerRight: {
+      justifyContent: "flex-end"
+    },
+    root: {
+      cursor: "pointer"
+    }
+  }),
+  { name: "TableCellHeader" }
+);
 
 export type TableCellHeaderArrowDirection = "asc" | "desc";
 export type TableCellHeaderArrowPosition = "left" | "right";
 export interface TableCellHeaderProps extends TableCellProps {
   arrowPosition?: TableCellHeaderArrowPosition;
   direction?: TableCellHeaderArrowDirection;
+  disableClick?: boolean;
   textAlign?: "left" | "center" | "right";
 }
 
@@ -55,12 +64,18 @@ const TableCellHeader: React.FC<TableCellHeaderProps> = props => {
     children,
     className,
     direction,
+    disableClick,
     textAlign,
     ...rest
   } = props;
 
   return (
-    <TableCell {...rest} className={classNames(classes.root, className)}>
+    <TableCell
+      {...rest}
+      className={classNames(classes.root, className, {
+        [classes.disableClick]: disableClick
+      })}
+    >
       <div
         className={classNames(classes.labelContainer, {
           [classes.labelContainerActive]: !!direction && !!arrowPosition,

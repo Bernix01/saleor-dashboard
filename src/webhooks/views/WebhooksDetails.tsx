@@ -11,20 +11,21 @@ import { WebhookEventTypeEnum } from "@saleor/types/globalTypes";
 import WebhookDeleteDialog from "@saleor/webhooks/components/WebhookDeleteDialog";
 import { WebhookDelete } from "@saleor/webhooks/types/WebhookDelete";
 import { WebhookUpdate } from "@saleor/webhooks/types/WebhookUpdate";
-import { getMutationState, maybe } from "../../misc";
+import createDialogActionHandlers from "@saleor/utils/handlers/dialogActionHandlers";
+import { maybe } from "../../misc";
 import WebhooksDetailsPage from "../components/WebhooksDetailsPage";
 import { TypedWebhookDelete, TypedWebhookUpdate } from "../mutations";
 import { TypedWebhooksDetailsQuery } from "../queries";
 import {
-  webhooksListUrl,
-  WebhooksListUrlQueryParams,
-  webhooksUrl,
-  WebhookUrlDialog
+  webhookListUrl,
+  webhookUrl,
+  WebhookUrlDialog,
+  WebhookUrlQueryParams
 } from "../urls";
 
 export interface WebhooksDetailsProps {
   id: string;
-  params: WebhooksListUrlQueryParams;
+  params: WebhookUrlQueryParams;
 }
 
 export const WebhooksDetails: React.FC<WebhooksDetailsProps> = ({
@@ -41,31 +42,17 @@ export const WebhooksDetails: React.FC<WebhooksDetailsProps> = ({
     variables: DEFAULT_INITIAL_SEARCH_DATA
   });
 
-  const closeModal = () =>
-    navigate(
-      webhooksUrl(id, {
-        ...params,
-        action: undefined,
-        id: undefined
-      }),
-      true
-    );
-
-  const openModal = (action: WebhookUrlDialog, tokenId?: string) =>
-    navigate(
-      webhooksUrl(id, {
-        ...params,
-        action,
-        id: tokenId
-      })
-    );
+  const [openModal, closeModal] = createDialogActionHandlers<
+    WebhookUrlDialog,
+    WebhookUrlQueryParams
+  >(navigate, params => webhookUrl(id, params), params);
 
   const onWebhookDelete = (data: WebhookDelete) => {
     if (data.webhookDelete.errors.length === 0) {
       notify({
         text: intl.formatMessage(commonMessages.savedChanges)
       });
-      navigate(webhooksListUrl());
+      navigate(webhookListUrl());
     }
   };
 
@@ -74,7 +61,7 @@ export const WebhooksDetails: React.FC<WebhooksDetailsProps> = ({
       notify({
         text: intl.formatMessage(commonMessages.savedChanges)
       });
-      navigate(webhooksUrl(data.webhookUpdate.webhook.id));
+      navigate(webhookUrl(data.webhookUpdate.webhook.id));
     }
   };
 
@@ -85,14 +72,6 @@ export const WebhooksDetails: React.FC<WebhooksDetailsProps> = ({
           {(webhookDelete, webhookDeleteOpts) => (
             <TypedWebhooksDetailsQuery variables={{ id }}>
               {webhookDetails => {
-                const formTransitionState = getMutationState(
-                  webhookUpdateOpts.called,
-                  webhookUpdateOpts.loading,
-                  maybe(
-                    () => webhookUpdateOpts.data.webhookUpdate.webhookErrors
-                  )
-                );
-
                 const handleRemoveConfirm = () =>
                   webhookDelete({
                     variables: {
@@ -105,12 +84,6 @@ export const WebhooksDetails: React.FC<WebhooksDetailsProps> = ({
                   []
                 );
 
-                const deleteTransitionState = getMutationState(
-                  webhookDeleteOpts.called,
-                  webhookDeleteOpts.loading,
-                  maybe(() => webhookDeleteOpts.data.webhookDelete.errors)
-                );
-
                 return (
                   <>
                     <WindowTitle
@@ -119,7 +92,7 @@ export const WebhooksDetails: React.FC<WebhooksDetailsProps> = ({
                     <WebhooksDetailsPage
                       disabled={webhookDetails.loading}
                       errors={formErrors}
-                      saveButtonBarState={formTransitionState}
+                      saveButtonBarState={webhookUpdateOpts.status}
                       webhook={maybe(() => webhookDetails.data.webhook)}
                       fetchServiceAccounts={searchServiceAccount}
                       services={maybe(() =>
@@ -127,7 +100,7 @@ export const WebhooksDetails: React.FC<WebhooksDetailsProps> = ({
                           edge => edge.node
                         )
                       )}
-                      onBack={() => navigate(webhooksListUrl())}
+                      onBack={() => navigate(webhookListUrl())}
                       onDelete={() => openModal("remove")}
                       onSubmit={data => {
                         webhookUpdate({
@@ -148,7 +121,7 @@ export const WebhooksDetails: React.FC<WebhooksDetailsProps> = ({
                       }}
                     />
                     <WebhookDeleteDialog
-                      confirmButtonState={deleteTransitionState}
+                      confirmButtonState={webhookDeleteOpts.status}
                       name={maybe(
                         () => webhookDetails.data.webhook.name,
                         "..."

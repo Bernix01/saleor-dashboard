@@ -18,47 +18,53 @@ import {
   maybe,
   renderCollection
 } from "@saleor/misc";
-import { ListProps } from "@saleor/types";
+import { ListProps, SortPage } from "@saleor/types";
+import { StaffListUrlSortField } from "@saleor/staff/urls";
+import TableCellHeader from "@saleor/components/TableCellHeader";
+import { getArrowDirection } from "@saleor/utils/sort";
 import { StaffList_staffUsers_edges_node } from "../../types/StaffList";
 
-const useStyles = makeStyles(theme => ({
-  avatar: {
-    alignItems: "center",
-    borderRadius: "100%",
-    display: "grid",
-    float: "left",
-    height: 47,
-    justifyContent: "center",
-    marginRight: theme.spacing(1),
-    overflow: "hidden",
-    width: 47
-  },
-  avatarDefault: {
-    "& p": {
-      color: "#fff",
-      lineHeight: "47px"
+const useStyles = makeStyles(
+  theme => ({
+    avatar: {
+      alignItems: "center",
+      borderRadius: "100%",
+      display: "grid",
+      float: "left",
+      height: 47,
+      justifyContent: "center",
+      marginRight: theme.spacing(1),
+      overflow: "hidden",
+      width: 47
     },
-    background: theme.palette.primary.main,
-    height: 47,
-    textAlign: "center",
-    width: 47
-  },
-  avatarImage: {
-    pointerEvents: "none",
-    width: "100%"
-  },
-  statusText: {
-    color: "#9E9D9D"
-  },
-  tableRow: {
-    cursor: "pointer"
-  },
-  wideColumn: {
-    width: "80%"
-  }
-}));
+    avatarDefault: {
+      "& p": {
+        color: "#fff",
+        lineHeight: "47px"
+      },
+      background: theme.palette.primary.main,
+      height: 47,
+      textAlign: "center",
+      width: 47
+    },
+    avatarImage: {
+      pointerEvents: "none",
+      width: "100%"
+    },
+    statusText: {
+      color: "#9E9D9D"
+    },
+    tableRow: {
+      cursor: "pointer"
+    },
+    wideColumn: {
+      width: "80%"
+    }
+  }),
+  { name: "StaffList" }
+);
 
-interface StaffListProps extends ListProps {
+interface StaffListProps extends ListProps, SortPage<StaffListUrlSortField> {
   staffMembers: StaffList_staffUsers_edges_node[];
 }
 
@@ -70,7 +76,9 @@ const StaffList: React.FC<StaffListProps> = props => {
     onPreviousPage,
     onUpdateListSettings,
     onRowClick,
+    onSort,
     pageInfo,
+    sort,
     staffMembers
   } = props;
 
@@ -81,15 +89,31 @@ const StaffList: React.FC<StaffListProps> = props => {
     <ResponsiveTable>
       <TableHead>
         <TableRow>
-          <TableCell className={classes.wideColumn}>
+          <TableCellHeader
+            direction={
+              sort.sort === StaffListUrlSortField.name
+                ? getArrowDirection(sort.asc)
+                : undefined
+            }
+            arrowPosition="right"
+            onClick={() => onSort(StaffListUrlSortField.name)}
+            className={classes.wideColumn}
+          >
             <FormattedMessage
               defaultMessage="Name"
               description="staff member full name"
             />
-          </TableCell>
-          <TableCell>
+          </TableCellHeader>
+          <TableCellHeader
+            direction={
+              sort.sort === StaffListUrlSortField.email
+                ? getArrowDirection(sort.asc)
+                : undefined
+            }
+            onClick={() => onSort(StaffListUrlSortField.email)}
+          >
             <FormattedMessage defaultMessage="Email Address" />
-          </TableCell>
+          </TableCellHeader>
         </TableRow>
       </TableHead>
       <TableFooter>

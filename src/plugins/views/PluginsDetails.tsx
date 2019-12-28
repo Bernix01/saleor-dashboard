@@ -8,7 +8,8 @@ import useNavigator from "@saleor/hooks/useNavigator";
 import useNotifier from "@saleor/hooks/useNotifier";
 import { commonMessages } from "@saleor/intl";
 import { ConfigurationItemInput } from "@saleor/types/globalTypes";
-import { getMutationState, maybe } from "../../misc";
+import createDialogActionHandlers from "@saleor/utils/handlers/dialogActionHandlers";
+import { maybe } from "../../misc";
 import PluginsDetailsPage from "../components/PluginsDetailsPage";
 import PluginSecretFieldDialog from "../components/PluginSecretFieldDialog";
 import { TypedPluginUpdate } from "../mutations";
@@ -16,16 +17,16 @@ import { TypedPluginsDetailsQuery } from "../queries";
 import { Plugin_plugin_configuration } from "../types/Plugin";
 import { PluginUpdate } from "../types/PluginUpdate";
 import {
-  pluginsListUrl,
-  pluginsUrl,
-  PluginsUrlQueryParams,
+  pluginListUrl,
+  pluginUrl,
+  PluginUrlQueryParams,
   PluginUrlDialog
 } from "../urls";
 import { isSecretField } from "../utils";
 
 export interface PluginsDetailsProps {
   id: string;
-  params: PluginsUrlQueryParams;
+  params: PluginUrlQueryParams;
 }
 
 export function getConfigurationInput(
@@ -52,24 +53,10 @@ export const PluginsDetails: React.FC<PluginsDetailsProps> = ({
   const notify = useNotifier();
   const intl = useIntl();
 
-  const closeModal = () =>
-    navigate(
-      pluginsUrl(id, {
-        ...params,
-        action: undefined,
-        field: undefined
-      }),
-      true
-    );
-
-  const openModal = (action: PluginUrlDialog, field?: string) =>
-    navigate(
-      pluginsUrl(id, {
-        ...params,
-        action,
-        field
-      })
-    );
+  const [openModal, closeModal] = createDialogActionHandlers<
+    PluginUrlDialog,
+    PluginUrlQueryParams
+  >(navigate, params => pluginUrl(id, params), params);
 
   const handleUpdate = (data: PluginUpdate) => {
     if (data.pluginUpdate.errors.length === 0) {
@@ -85,12 +72,6 @@ export const PluginsDetails: React.FC<PluginsDetailsProps> = ({
       {pluginDetails => (
         <TypedPluginUpdate onCompleted={handleUpdate}>
           {(pluginUpdate, pluginUpdateOpts) => {
-            const formTransitionState = getMutationState(
-              pluginUpdateOpts.called,
-              pluginUpdateOpts.loading,
-              maybe(() => pluginUpdateOpts.data.pluginUpdate.errors)
-            );
-
             const formErrors = maybe(
               () => pluginUpdateOpts.data.pluginUpdate.errors,
               []
@@ -103,7 +84,7 @@ export const PluginsDetails: React.FC<PluginsDetailsProps> = ({
                   input: {
                     configuration: [
                       {
-                        name: params.field,
+                        name: params.id,
                         value
                       }
                     ]
@@ -120,12 +101,20 @@ export const PluginsDetails: React.FC<PluginsDetailsProps> = ({
                   disabled={pluginDetails.loading}
                   errors={formErrors}
                   saveButtonBarState={
-                    !params.action ? formTransitionState : "default"
+                    !params.action ? pluginUpdateOpts.status : "default"
                   }
                   plugin={maybe(() => pluginDetails.data.plugin)}
-                  onBack={() => navigate(pluginsListUrl())}
-                  onClear={field => openModal("clear", field)}
-                  onEdit={field => openModal("edit", field)}
+                  onBack={() => navigate(pluginListUrl())}
+                  onClear={id =>
+                    openModal("clear", {
+                      id
+                    })
+                  }
+                  onEdit={id =>
+                    openModal("edit", {
+                      id
+                    })
+                  }
                   onSubmit={formData =>
                     pluginUpdate({
                       variables: {
@@ -145,10 +134,10 @@ export const PluginsDetails: React.FC<PluginsDetailsProps> = ({
                   <>
                     <ActionDialog
                       confirmButtonState={
-                        !!params.action ? formTransitionState : "default"
+                        !!params.action ? pluginUpdateOpts.status : "default"
                       }
                       onClose={closeModal}
-                      open={params.action === "clear" && !!params.field}
+                      open={params.action === "clear" && !!params.id}
                       title={intl.formatMessage({
                         defaultMessage: "Authorization Field Delete",
                         description: "header"
@@ -161,16 +150,16 @@ export const PluginsDetails: React.FC<PluginsDetailsProps> = ({
                     </ActionDialog>
                     <PluginSecretFieldDialog
                       confirmButtonState={
-                        !!params.action ? formTransitionState : "default"
+                        !!params.action ? pluginUpdateOpts.status : "default"
                       }
                       field={maybe(() =>
                         pluginDetails.data.plugin.configuration.find(
-                          field => field.name === params.field
+                          field => field.name === params.id
                         )
                       )}
                       onClose={closeModal}
                       onConfirm={formData => handleFieldUpdate(formData.value)}
-                      open={params.action === "edit" && !!params.field}
+                      open={params.action === "edit" && !!params.id}
                     />
                   </>
                 )}

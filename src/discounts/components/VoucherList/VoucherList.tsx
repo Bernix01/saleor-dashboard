@@ -15,59 +15,68 @@ import Skeleton from "@saleor/components/Skeleton";
 import TableHead from "@saleor/components/TableHead";
 import TablePagination from "@saleor/components/TablePagination";
 import { maybe, renderCollection } from "@saleor/misc";
-import { ListActions, ListProps } from "@saleor/types";
+import { ListActions, ListProps, SortPage } from "@saleor/types";
 import { DiscountValueTypeEnum } from "@saleor/types/globalTypes";
+import { VoucherListUrlSortField } from "@saleor/discounts/urls";
+import TableCellHeader from "@saleor/components/TableCellHeader";
+import { getArrowDirection } from "@saleor/utils/sort";
 import { VoucherList_vouchers_edges_node } from "../../types/VoucherList";
 
-export interface VoucherListProps extends ListProps, ListActions {
+export interface VoucherListProps
+  extends ListProps,
+    ListActions,
+    SortPage<VoucherListUrlSortField> {
   defaultCurrency: string;
   vouchers: VoucherList_vouchers_edges_node[];
 }
 
-const useStyles = makeStyles(theme => ({
-  [theme.breakpoints.up("lg")]: {
+const useStyles = makeStyles(
+  theme => ({
+    [theme.breakpoints.up("lg")]: {
+      colEnd: {
+        width: 180
+      },
+      colMinSpent: {
+        width: 150
+      },
+      colName: {},
+      colStart: {
+        width: 180
+      },
+      colUses: {
+        width: 150
+      },
+      colValue: {
+        width: 150
+      }
+    },
     colEnd: {
-      width: 180
+      textAlign: "right"
     },
     colMinSpent: {
-      width: 150
+      textAlign: "right"
     },
-    colName: {},
+    colName: {
+      paddingLeft: 0
+    },
     colStart: {
-      width: 180
+      textAlign: "right"
     },
     colUses: {
-      width: 150
+      textAlign: "right"
     },
     colValue: {
-      width: 150
+      textAlign: "right"
+    },
+    tableRow: {
+      cursor: "pointer"
+    },
+    textRight: {
+      textAlign: "right"
     }
-  },
-  colEnd: {
-    textAlign: "right"
-  },
-  colMinSpent: {
-    textAlign: "right"
-  },
-  colName: {
-    paddingLeft: 0
-  },
-  colStart: {
-    textAlign: "right"
-  },
-  colUses: {
-    textAlign: "right"
-  },
-  colValue: {
-    textAlign: "right"
-  },
-  tableRow: {
-    cursor: "pointer"
-  },
-  textRight: {
-    textAlign: "right"
-  }
-}));
+  }),
+  { name: "VoucherList" }
+);
 
 const numberOfColumns = 7;
 
@@ -80,10 +89,12 @@ const VoucherList: React.FC<VoucherListProps> = props => {
     onPreviousPage,
     onUpdateListSettings,
     onRowClick,
+    onSort,
     pageInfo,
     vouchers,
     isChecked,
     selected,
+    sort,
     toggle,
     toggleAll,
     toolbar
@@ -101,36 +112,85 @@ const VoucherList: React.FC<VoucherListProps> = props => {
         toggleAll={toggleAll}
         toolbar={toolbar}
       >
-        <TableCell className={classes.colName}>
+        <TableCellHeader
+          direction={
+            sort.sort === VoucherListUrlSortField.code
+              ? getArrowDirection(sort.asc)
+              : undefined
+          }
+          arrowPosition="right"
+          onClick={() => onSort(VoucherListUrlSortField.code)}
+          className={classes.colName}
+        >
           <FormattedMessage defaultMessage="Code" description="voucher code" />
-        </TableCell>
-        <TableCell className={classes.colMinSpent}>
+        </TableCellHeader>
+        <TableCellHeader
+          direction={
+            sort.sort === VoucherListUrlSortField.minSpent
+              ? getArrowDirection(sort.asc)
+              : undefined
+          }
+          onClick={() => onSort(VoucherListUrlSortField.minSpent)}
+          className={classes.colMinSpent}
+        >
           <FormattedMessage
             defaultMessage="Min. Spent"
             description="minimum amount of spent money to activate voucher"
           />
-        </TableCell>
-        <TableCell className={classes.colStart}>
+        </TableCellHeader>
+        <TableCellHeader
+          direction={
+            sort.sort === VoucherListUrlSortField.startDate
+              ? getArrowDirection(sort.asc)
+              : undefined
+          }
+          onClick={() => onSort(VoucherListUrlSortField.startDate)}
+          className={classes.colStart}
+        >
           <FormattedMessage
             defaultMessage="Starts"
             description="voucher is active from date"
           />
-        </TableCell>
-        <TableCell className={classes.colEnd}>
+        </TableCellHeader>
+        <TableCellHeader
+          direction={
+            sort.sort === VoucherListUrlSortField.endDate
+              ? getArrowDirection(sort.asc)
+              : undefined
+          }
+          onClick={() => onSort(VoucherListUrlSortField.endDate)}
+          className={classes.colEnd}
+        >
           <FormattedMessage
             defaultMessage="Ends"
             description="voucher is active until date"
           />
-        </TableCell>
-        <TableCell className={classes.colValue}>
+        </TableCellHeader>
+        <TableCellHeader
+          direction={
+            sort.sort === VoucherListUrlSortField.value
+              ? getArrowDirection(sort.asc)
+              : undefined
+          }
+          onClick={() => onSort(VoucherListUrlSortField.value)}
+          className={classes.colValue}
+        >
           <FormattedMessage
             defaultMessage="Value"
             description="voucher value"
           />
-        </TableCell>
-        <TableCell className={classes.colUses}>
+        </TableCellHeader>
+        <TableCellHeader
+          direction={
+            sort.sort === VoucherListUrlSortField.limit
+              ? getArrowDirection(sort.asc)
+              : undefined
+          }
+          onClick={() => onSort(VoucherListUrlSortField.limit)}
+          className={classes.colUses}
+        >
           <FormattedMessage defaultMessage="Uses" description="voucher uses" />
-        </TableCell>
+        </TableCellHeader>
       </TableHead>
       <TableFooter>
         <TableRow>

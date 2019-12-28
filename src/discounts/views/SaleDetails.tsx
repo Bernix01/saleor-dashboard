@@ -20,9 +20,10 @@ import { commonMessages, sectionNames } from "@saleor/intl";
 import useCategorySearch from "@saleor/searches/useCategorySearch";
 import useCollectionSearch from "@saleor/searches/useCollectionSearch";
 import useProductSearch from "@saleor/searches/useProductSearch";
+import createDialogActionHandlers from "@saleor/utils/handlers/dialogActionHandlers";
 import { categoryUrl } from "../../categories/urls";
 import { collectionUrl } from "../../collections/urls";
-import { decimal, getMutationState, joinDateTime, maybe } from "../../misc";
+import { decimal, joinDateTime, maybe } from "../../misc";
 import { productUrl } from "../../products/urls";
 import { DiscountValueTypeEnum, SaleType } from "../../types/globalTypes";
 import SaleDetailsPage, {
@@ -42,8 +43,8 @@ import { SaleUpdate } from "../types/SaleUpdate";
 import {
   saleListUrl,
   saleUrl,
-  SaleUrlDialog,
-  SaleUrlQueryParams
+  SaleUrlQueryParams,
+  SaleUrlDialog
 } from "../urls";
 
 interface SaleDetailsProps {
@@ -114,24 +115,10 @@ export const SaleDetails: React.FC<SaleDetailsProps> = ({ id, params }) => {
     }
   };
 
-  const closeModal = () =>
-    navigate(
-      saleUrl(id, {
-        ...params,
-        action: undefined,
-        ids: undefined
-      }),
-      true
-    );
-
-  const openModal = (action: SaleUrlDialog, ids?: string[]) =>
-    navigate(
-      saleUrl(id, {
-        ...params,
-        action,
-        ids
-      })
-    );
+  const [openModal, closeModal] = createDialogActionHandlers<
+    SaleUrlDialog,
+    SaleUrlQueryParams
+  >(navigate, params => saleUrl(id, params), params);
 
   const handleCatalogueAdd = (data: SaleCataloguesAdd) => {
     if (data.saleCataloguesAdd.errors.length === 0) {
@@ -169,34 +156,6 @@ export const SaleDetails: React.FC<SaleDetailsProps> = ({ id, params }) => {
                               SaleDetailsPageTab.collections
                             ? maybe(() => data.sale.collections.pageInfo)
                             : maybe(() => data.sale.products.pageInfo);
-                        const formTransitionState = getMutationState(
-                          saleUpdateOpts.called,
-                          saleUpdateOpts.loading,
-                          maybe(() => saleUpdateOpts.data.saleUpdate.errors)
-                        );
-                        const assignTransitionState = getMutationState(
-                          saleCataloguesAddOpts.called,
-                          saleCataloguesAddOpts.loading,
-                          maybe(
-                            () =>
-                              saleCataloguesAddOpts.data.saleCataloguesAdd
-                                .errors
-                          )
-                        );
-                        const unassignTransitionState = getMutationState(
-                          saleCataloguesRemoveOpts.called,
-                          saleCataloguesRemoveOpts.loading,
-                          maybe(
-                            () =>
-                              saleCataloguesRemoveOpts.data.saleCataloguesRemove
-                                .errors
-                          )
-                        );
-                        const removeTransitionState = getMutationState(
-                          saleDeleteOpts.called,
-                          saleDeleteOpts.loading,
-                          maybe(() => saleDeleteOpts.data.saleDelete.errors)
-                        );
 
                         const handleCategoriesUnassign = (ids: string[]) =>
                           saleCataloguesRemove({
@@ -308,12 +267,14 @@ export const SaleDetails: React.FC<SaleDetailsProps> = ({ id, params }) => {
                                 })
                               }
                               onRemove={() => openModal("remove")}
-                              saveButtonBarState={formTransitionState}
+                              saveButtonBarState={saleUpdateOpts.status}
                               categoryListToolbar={
                                 <Button
                                   color="primary"
                                   onClick={() =>
-                                    openModal("unassign-category", listElements)
+                                    openModal("unassign-category", {
+                                      ids: listElements
+                                    })
                                   }
                                 >
                                   <FormattedMessage
@@ -327,10 +288,9 @@ export const SaleDetails: React.FC<SaleDetailsProps> = ({ id, params }) => {
                                 <Button
                                   color="primary"
                                   onClick={() =>
-                                    openModal(
-                                      "unassign-collection",
-                                      listElements
-                                    )
+                                    openModal("unassign-collection", {
+                                      ids: listElements
+                                    })
                                   }
                                 >
                                   <FormattedMessage
@@ -344,7 +304,9 @@ export const SaleDetails: React.FC<SaleDetailsProps> = ({ id, params }) => {
                                 <Button
                                   color="primary"
                                   onClick={() =>
-                                    openModal("unassign-product", listElements)
+                                    openModal("unassign-product", {
+                                      ids: listElements
+                                    })
                                   }
                                 >
                                   <FormattedMessage
@@ -360,7 +322,7 @@ export const SaleDetails: React.FC<SaleDetailsProps> = ({ id, params }) => {
                               toggleAll={toggleAll}
                             />
                             <AssignProductDialog
-                              confirmButtonState={assignTransitionState}
+                              confirmButtonState={saleCataloguesAddOpts.status}
                               open={params.action === "assign-product"}
                               onFetch={searchProducts}
                               loading={searchProductsOpts.loading}
@@ -394,7 +356,7 @@ export const SaleDetails: React.FC<SaleDetailsProps> = ({ id, params }) => {
                                     suggestedCategory => suggestedCategory.id
                                   )
                               )}
-                              confirmButtonState={assignTransitionState}
+                              confirmButtonState={saleCataloguesAddOpts.status}
                               open={params.action === "assign-category"}
                               onFetch={searchCategories}
                               loading={searchCategoriesOpts.loading}
@@ -421,7 +383,7 @@ export const SaleDetails: React.FC<SaleDetailsProps> = ({ id, params }) => {
                                     suggestedCategory => suggestedCategory.id
                                   )
                               )}
-                              confirmButtonState={assignTransitionState}
+                              confirmButtonState={saleCataloguesAddOpts.status}
                               open={params.action === "assign-collection"}
                               onFetch={searchCollections}
                               loading={searchCollectionsOpts.loading}
@@ -449,7 +411,9 @@ export const SaleDetails: React.FC<SaleDetailsProps> = ({ id, params }) => {
                                 defaultMessage: "Unassign Categories From Sale",
                                 description: "dialog header"
                               })}
-                              confirmButtonState={unassignTransitionState}
+                              confirmButtonState={
+                                saleCataloguesRemoveOpts.status
+                              }
                               onClose={closeModal}
                               onConfirm={() =>
                                 handleCategoriesUnassign(params.ids)
@@ -480,7 +444,9 @@ export const SaleDetails: React.FC<SaleDetailsProps> = ({ id, params }) => {
                                   "Unassign Collections From Sale",
                                 description: "dialog header"
                               })}
-                              confirmButtonState={unassignTransitionState}
+                              confirmButtonState={
+                                saleCataloguesRemoveOpts.status
+                              }
                               onClose={closeModal}
                               onConfirm={() =>
                                 handleCollectionsUnassign(params.ids)
@@ -510,7 +476,9 @@ export const SaleDetails: React.FC<SaleDetailsProps> = ({ id, params }) => {
                                 defaultMessage: "Unassign Products From Sale",
                                 description: "dialog header"
                               })}
-                              confirmButtonState={unassignTransitionState}
+                              confirmButtonState={
+                                saleCataloguesRemoveOpts.status
+                              }
                               onClose={closeModal}
                               onConfirm={() =>
                                 handleProductsUnassign(params.ids)
@@ -537,7 +505,7 @@ export const SaleDetails: React.FC<SaleDetailsProps> = ({ id, params }) => {
                                 defaultMessage: "Delete Sale",
                                 description: "dialog header"
                               })}
-                              confirmButtonState={removeTransitionState}
+                              confirmButtonState={saleDeleteOpts.status}
                               onClose={closeModal}
                               variant="delete"
                               onConfirm={() =>

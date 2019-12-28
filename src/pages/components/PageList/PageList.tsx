@@ -14,32 +14,41 @@ import StatusLabel from "@saleor/components/StatusLabel";
 import TableHead from "@saleor/components/TableHead";
 import TablePagination from "@saleor/components/TablePagination";
 import { maybe, renderCollection } from "@saleor/misc";
-import { ListActions, ListProps } from "@saleor/types";
+import { ListActions, ListProps, SortPage } from "@saleor/types";
+import { PageListUrlSortField } from "@saleor/pages/urls";
+import TableCellHeader from "@saleor/components/TableCellHeader";
+import { getArrowDirection } from "@saleor/utils/sort";
 import { PageList_pages_edges_node } from "../../types/PageList";
 
-export interface PageListProps extends ListProps, ListActions {
+export interface PageListProps
+  extends ListProps,
+    ListActions,
+    SortPage<PageListUrlSortField> {
   pages: PageList_pages_edges_node[];
 }
 
-const useStyles = makeStyles(theme => ({
-  [theme.breakpoints.up("lg")]: {
-    colSlug: {
-      width: 250
+const useStyles = makeStyles(
+  theme => ({
+    [theme.breakpoints.up("lg")]: {
+      colSlug: {
+        width: 250
+      },
+      colTitle: {},
+      colVisibility: {
+        width: 200
+      }
     },
-    colTitle: {},
-    colVisibility: {
-      width: 200
+    colSlug: {},
+    colTitle: {
+      paddingLeft: 0
+    },
+    colVisibility: {},
+    link: {
+      cursor: "pointer"
     }
-  },
-  colSlug: {},
-  colTitle: {
-    paddingLeft: 0
-  },
-  colVisibility: {},
-  link: {
-    cursor: "pointer"
-  }
-}));
+  }),
+  { name: "PageList" }
+);
 
 const numberOfColumns = 4;
 
@@ -51,10 +60,12 @@ const PageList: React.FC<PageListProps> = props => {
     onNextPage,
     pageInfo,
     onRowClick,
+    onSort,
     onUpdateListSettings,
     onPreviousPage,
     isChecked,
     selected,
+    sort,
     toggle,
     toggleAll,
     toolbar
@@ -74,24 +85,51 @@ const PageList: React.FC<PageListProps> = props => {
           toggleAll={toggleAll}
           toolbar={toolbar}
         >
-          <TableCell className={classes.colTitle}>
+          <TableCellHeader
+            direction={
+              sort.sort === PageListUrlSortField.title
+                ? getArrowDirection(sort.asc)
+                : undefined
+            }
+            arrowPosition="right"
+            onClick={() => onSort(PageListUrlSortField.title)}
+            className={classes.colTitle}
+          >
             <FormattedMessage
               defaultMessage="Title"
               description="dialog header"
             />
-          </TableCell>
-          <TableCell className={classes.colSlug}>
+          </TableCellHeader>
+          <TableCellHeader
+            direction={
+              sort.sort === PageListUrlSortField.slug
+                ? getArrowDirection(sort.asc)
+                : undefined
+            }
+            arrowPosition="right"
+            onClick={() => onSort(PageListUrlSortField.slug)}
+            className={classes.colSlug}
+          >
             <FormattedMessage
               defaultMessage="Slug"
               description="page internal name"
             />
-          </TableCell>
-          <TableCell className={classes.colVisibility}>
+          </TableCellHeader>
+          <TableCellHeader
+            direction={
+              sort.sort === PageListUrlSortField.visible
+                ? getArrowDirection(sort.asc)
+                : undefined
+            }
+            arrowPosition="right"
+            onClick={() => onSort(PageListUrlSortField.visible)}
+            className={classes.colVisibility}
+          >
             <FormattedMessage
               defaultMessage="Visibility"
               description="page status"
             />
-          </TableCell>
+          </TableCellHeader>
         </TableHead>
         <TableFooter>
           <TableRow>
@@ -130,13 +168,13 @@ const PageList: React.FC<PageListProps> = props => {
                       onChange={() => toggle(page.id)}
                     />
                   </TableCell>
-                  <TableCell className={classes.colTitle}>
+                  <TableCellHeader className={classes.colTitle}>
                     {maybe<React.ReactNode>(() => page.title, <Skeleton />)}
-                  </TableCell>
-                  <TableCell className={classes.colSlug}>
+                  </TableCellHeader>
+                  <TableCellHeader className={classes.colSlug}>
                     {maybe<React.ReactNode>(() => page.slug, <Skeleton />)}
-                  </TableCell>
-                  <TableCell className={classes.colVisibility}>
+                  </TableCellHeader>
+                  <TableCellHeader className={classes.colVisibility}>
                     {maybe<React.ReactNode>(
                       () => (
                         <StatusLabel
@@ -156,7 +194,7 @@ const PageList: React.FC<PageListProps> = props => {
                       ),
                       <Skeleton />
                     )}
-                  </TableCell>
+                  </TableCellHeader>
                 </TableRow>
               );
             },
