@@ -1,18 +1,13 @@
-<?xml version="1.0" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
- "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
-<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
- width="513.000000pt" height="513.000000pt" viewBox="0 0 513.000000 513.000000"
- preserveAspectRatio="xMidYMid meet">
-<metadata>
-Created by potrace 1.11, written by Peter Selinger 2001-2013
-</metadata>
-<g transform="translate(0.000000,513.000000) scale(0.100000,-0.100000)"
-fill="#000000" stroke="none">
-<path d="M430 5123 c-197 -33 -378 -206 -419 -401 -8 -38 -11 -655 -11 -2161
-0 -1883 2 -2114 16 -2162 56 -195 221 -349 406 -379 42 -6 765 -10 2158 -10
-2313 0 2153 -4 2277 63 74 40 171 136 210 210 67 124 63 -36 63 2293 0 2293 3
-2150 -56 2271 -38 76 -151 189 -226 226 -123 59 25 56 -2278 55 -1163 0 -2126
--3 -2140 -5z"/>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 23.1.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 513 513" style="enable-background:new 0 0 513 513;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#FFFFFF;}
+</style>
+<g transform="translate(0.000000,513.000000) scale(0.100000,-0.100000)">
+	<path class="st0" d="M430,5123c-197-33-378-206-419-401c-8-38-11-655-11-2161C0,678,2,447,16,399C72,204,237,50,422,20
+		c42-6,765-10,2158-10c2313,0,2153-4,2277,63c74,40,171,136,210,210c67,124,63-36,63,2293c0,2293,3,2150-56,2271
+		c-38,76-151,189-226,226c-123,59,25,56-2278,55C1407,5128,444,5125,430,5123z"/>
 </g>
 </svg>
