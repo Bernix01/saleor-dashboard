@@ -9,13 +9,14 @@ import useNotifier from "@saleor/hooks/useNotifier";
 import useShop from "@saleor/hooks/useShop";
 import useUser from "@saleor/hooks/useUser";
 import { commonMessages } from "@saleor/intl";
-import { getMutationState, maybe } from "../../misc";
+import { maybe } from "../../misc";
 import StaffDetailsPage from "../components/StaffDetailsPage/StaffDetailsPage";
 import {
   TypedStaffAvatarDeleteMutation,
   TypedStaffAvatarUpdateMutation,
   TypedStaffMemberDeleteMutation,
-  TypedStaffMemberUpdateMutation
+  TypedStaffMemberUpdateMutation,
+  useChangeStaffPassword
 } from "../mutations";
 import { TypedStaffMemberDetailsQuery } from "../queries";
 import { StaffAvatarDelete } from "../types/StaffAvatarDelete";
@@ -27,6 +28,8 @@ import {
   staffMemberDetailsUrl,
   StaffMemberDetailsUrlQueryParams
 } from "../urls";
+import StaffPasswordResetDialog from "../components/StaffPasswordResetDialog";
+import { ChangeStaffPassword } from "../types/ChangeStaffPassword";
 
 interface OrderListProps {
   id: string;
@@ -39,6 +42,26 @@ export const StaffDetails: React.FC<OrderListProps> = ({ id, params }) => {
   const user = useUser();
   const intl = useIntl();
   const shop = useShop();
+
+  const closeModal = () =>
+    navigate(
+      staffMemberDetailsUrl(id, {
+        ...params,
+        action: undefined
+      })
+    );
+
+  const handleChangePassword = (data: ChangeStaffPassword) => {
+    if (data.passwordChange.errors.length === 0) {
+      notify({
+        text: intl.formatMessage(commonMessages.savedChanges)
+      });
+      closeModal();
+    }
+  };
+  const [changePassword, changePasswordOpts] = useChangeStaffPassword({
+    onCompleted: handleChangePassword
+  });
 
   return (
     <TypedStaffMemberDetailsQuery
@@ -93,24 +116,6 @@ export const StaffDetails: React.FC<OrderListProps> = ({ id, params }) => {
                         onCompleted={handleStaffMemberAvatarDelete}
                       >
                         {(deleteStaffAvatar, deleteAvatarResult) => {
-                          const formTransitionState = getMutationState(
-                            updateResult.called,
-                            updateResult.loading,
-                            maybe(() => updateResult.data.staffUpdate.errors)
-                          );
-                          const deleteTransitionState = getMutationState(
-                            deleteResult.called,
-                            deleteResult.loading,
-                            maybe(() => deleteResult.data.staffDelete.errors)
-                          );
-                          const deleteAvatarTransitionState = getMutationState(
-                            deleteAvatarResult.called,
-                            deleteAvatarResult.loading,
-                            maybe(
-                              () =>
-                                deleteAvatarResult.data.userAvatarDelete.errors
-                            )
-                          );
                           const isUserSameAsViewer = maybe(
                             () => user.user.id === data.user.id,
                             true
@@ -128,6 +133,13 @@ export const StaffDetails: React.FC<OrderListProps> = ({ id, params }) => {
                                 canRemove={!isUserSameAsViewer}
                                 disabled={loading}
                                 onBack={() => navigate(staffListUrl())}
+                                onChangePassword={() =>
+                                  navigate(
+                                    staffMemberDetailsUrl(id, {
+                                      action: "change-password"
+                                    })
+                                  )
+                                }
                                 onDelete={() =>
                                   navigate(
                                     staffMemberDetailsUrl(id, {
@@ -165,7 +177,7 @@ export const StaffDetails: React.FC<OrderListProps> = ({ id, params }) => {
                                 }
                                 permissions={maybe(() => shop.permissions)}
                                 staffMember={maybe(() => data.user)}
-                                saveButtonBarState={formTransitionState}
+                                saveButtonBarState={updateResult.status}
                               />
                               <ActionDialog
                                 open={params.action === "remove"}
@@ -173,11 +185,9 @@ export const StaffDetails: React.FC<OrderListProps> = ({ id, params }) => {
                                   defaultMessage: "delete Staff User",
                                   description: "dialog header"
                                 })}
-                                confirmButtonState={deleteTransitionState}
+                                confirmButtonState={deleteResult.status}
                                 variant="delete"
-                                onClose={() =>
-                                  navigate(staffMemberDetailsUrl(id))
-                                }
+                                onClose={closeModal}
                                 onConfirm={deleteStaffMember}
                               >
                                 <DialogContentText>
@@ -195,11 +205,9 @@ export const StaffDetails: React.FC<OrderListProps> = ({ id, params }) => {
                                   defaultMessage: "Delete Staff User Avatar",
                                   description: "dialog header"
                                 })}
-                                confirmButtonState={deleteAvatarTransitionState}
+                                confirmButtonState={deleteAvatarResult.status}
                                 variant="delete"
-                                onClose={() =>
-                                  navigate(staffMemberDetailsUrl(id))
-                                }
+                                onClose={closeModal}
                                 onConfirm={deleteStaffAvatar}
                               >
                                 <DialogContentText>
@@ -215,6 +223,22 @@ export const StaffDetails: React.FC<OrderListProps> = ({ id, params }) => {
                                   />
                                 </DialogContentText>
                               </ActionDialog>
+                              <StaffPasswordResetDialog
+                                confirmButtonState={changePasswordOpts.status}
+                                errors={maybe(
+                                  () =>
+                                    changePasswordOpts.data.passwordChange
+                                      .errors,
+                                  []
+                                )}
+                                open={params.action === "change-password"}
+                                onClose={closeModal}
+                                onSubmit={data =>
+                                  changePassword({
+                                    variables: data
+                                  })
+                                }
+                              />
                             </>
                           );
                         }}

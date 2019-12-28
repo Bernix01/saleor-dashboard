@@ -20,7 +20,7 @@ import { sectionNames } from "@saleor/intl";
 import { maybe } from "@saleor/misc";
 import { menuListUrl } from "@saleor/navigation/urls";
 import { pageListUrl } from "@saleor/pages/urls";
-import { pluginsListUrl } from "@saleor/plugins/urls";
+import { pluginListUrl } from "@saleor/plugins/urls";
 import { productTypeListUrl } from "@saleor/productTypes/urls";
 import { serviceListUrl } from "@saleor/services/urls";
 import { shippingZonesListUrl } from "@saleor/shipping/urls";
@@ -28,7 +28,7 @@ import { siteSettingsUrl } from "@saleor/siteSettings/urls";
 import { staffListUrl } from "@saleor/staff/urls";
 import { taxSection } from "@saleor/taxes/urls";
 import { PermissionEnum } from "@saleor/types/globalTypes";
-import { webhooksListUrl } from "@saleor/webhooks/urls";
+import { webhookListUrl } from "@saleor/webhooks/urls";
 import ConfigurationPage, { MenuSection } from "./ConfigurationPage";
 
 export function createConfigurationMenu(intl: IntlShape): MenuSection[] {
@@ -153,7 +153,7 @@ export function createConfigurationMenu(intl: IntlShape): MenuSection[] {
           ),
           permission: PermissionEnum.MANAGE_PLUGINS,
           title: intl.formatMessage(sectionNames.plugins),
-          url: pluginsListUrl()
+          url: pluginListUrl()
         },
         {
           description: intl.formatMessage({
@@ -171,7 +171,7 @@ export function createConfigurationMenu(intl: IntlShape): MenuSection[] {
           icon: <Webhooks fontSize="inherit" viewBox="0 0 44 44" />,
           permission: PermissionEnum.MANAGE_WEBHOOKS,
           title: intl.formatMessage(sectionNames.webhooks),
-          url: webhooksListUrl()
+          url: webhookListUrl()
         }
       ]
     }

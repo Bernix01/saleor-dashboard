@@ -15,8 +15,11 @@ import useNavigator from "@saleor/hooks/useNavigator";
 import usePaginator, {
   createPaginationState
 } from "@saleor/hooks/usePaginator";
-import { getMutationState, maybe } from "@saleor/misc";
+import { maybe } from "@saleor/misc";
 import { ListViews } from "@saleor/types";
+import { getSortParams } from "@saleor/utils/sort";
+import createSortHandler from "@saleor/utils/handlers/sortHandler";
+import createDialogActionHandlers from "@saleor/utils/handlers/dialogActionHandlers";
 import { CategoryListPage } from "../../components/CategoryListPage/CategoryListPage";
 import { useCategoryBulkDeleteMutation } from "../../mutations";
 import { useRootCategoriesQuery } from "../../queries";
@@ -24,10 +27,10 @@ import { CategoryBulkDelete } from "../../types/CategoryBulkDelete";
 import {
   categoryAddUrl,
   categoryListUrl,
-  CategoryListUrlDialog,
   CategoryListUrlFilters,
   CategoryListUrlQueryParams,
-  categoryUrl
+  categoryUrl,
+  CategoryListUrlDialog
 } from "../../urls";
 import {
   areFiltersApplied,
@@ -37,6 +40,7 @@ import {
   getFilterVariables,
   saveFilterTab
 } from "./filter";
+import { getSortQueryVariables } from "./sort";
 
 interface CategoryListProps {
   params: CategoryListUrlQueryParams;
@@ -57,7 +61,8 @@ export const CategoryList: React.FC<CategoryListProps> = ({ params }) => {
   const queryVariables = React.useMemo(
     () => ({
       ...paginationState,
-      filter: getFilterVariables(params)
+      filter: getFilterVariables(params),
+      sort: getSortQueryVariables(params)
     }),
     [params]
   );
@@ -87,24 +92,10 @@ export const CategoryList: React.FC<CategoryListProps> = ({ params }) => {
     );
   };
 
-  const closeModal = () =>
-    navigate(
-      categoryListUrl({
-        ...params,
-        action: undefined,
-        ids: undefined
-      }),
-      true
-    );
-
-  const openModal = (action: CategoryListUrlDialog, ids?: string[]) =>
-    navigate(
-      categoryListUrl({
-        ...params,
-        action,
-        ids
-      })
-    );
+  const [openModal, closeModal] = createDialogActionHandlers<
+    CategoryListUrlDialog,
+    CategoryListUrlQueryParams
+  >(navigate, categoryListUrl, params);
 
   const handleTabChange = (tab: number) => {
     reset();
@@ -148,11 +139,7 @@ export const CategoryList: React.FC<CategoryListProps> = ({ params }) => {
     onCompleted: handleCategoryBulkDelete
   });
 
-  const bulkDeleteState = getMutationState(
-    categoryBulkDeleteOpts.called,
-    categoryBulkDeleteOpts.loading,
-    maybe(() => categoryBulkDeleteOpts.data.categoryBulkDelete.errors)
-  );
+  const handleSort = createSortHandler(navigate, categoryListUrl, params);
 
   return (
     <>
@@ -170,8 +157,10 @@ export const CategoryList: React.FC<CategoryListProps> = ({ params }) => {
         onTabSave={() => openModal("save-search")}
         tabs={tabs.map(tab => tab.name)}
         settings={settings}
+        sort={getSortParams(params)}
         onAdd={() => navigate(categoryAddUrl())}
         onRowClick={id => () => navigate(categoryUrl(id))}
+        onSort={handleSort}
         disabled={loading}
         onNextPage={loadNextPage}
         onPreviousPage={loadPreviousPage}
@@ -185,13 +174,9 @@ export const CategoryList: React.FC<CategoryListProps> = ({ params }) => {
           <IconButton
             color="primary"
             onClick={() =>
-              navigate(
-                categoryListUrl({
-                  ...params,
-                  action: "delete",
-                  ids: listElements
-                })
-              )
+              openModal("delete", {
+                ids: listElements
+              })
             }
           >
             <DeleteIcon />
@@ -199,7 +184,7 @@ export const CategoryList: React.FC<CategoryListProps> = ({ params }) => {
         }
       />
       <ActionDialog
-        confirmButtonState={bulkDeleteState}
+        confirmButtonState={categoryBulkDeleteOpts.status}
         onClose={() =>
           navigate(
             categoryListUrl({

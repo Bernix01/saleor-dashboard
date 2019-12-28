@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useIntl } from "react-intl";
 
 import placeholderImg from "@assets/images/placeholder255x255.png";
@@ -6,7 +6,7 @@ import { WindowTitle } from "@saleor/components/WindowTitle";
 import useNavigator from "@saleor/hooks/useNavigator";
 import useNotifier from "@saleor/hooks/useNotifier";
 import { commonMessages } from "@saleor/intl";
-import { decimal, getMutationState, maybe } from "../../misc";
+import { decimal, maybe } from "../../misc";
 import ProductVariantDeleteDialog from "../components/ProductVariantDeleteDialog";
 import ProductVariantPage, {
   ProductVariantPageSubmitData
@@ -35,6 +35,10 @@ export const ProductVariant: React.FC<ProductUpdateProps> = ({
   const navigate = useNavigator();
   const notify = useNotifier();
   const intl = useIntl();
+  const [errors, setErrors] = useState([]);
+  useEffect(() => {
+    setErrors([]);
+  }, [variantId]);
 
   return (
     <TypedProductVariantQuery
@@ -54,8 +58,10 @@ export const ProductVariant: React.FC<ProductUpdateProps> = ({
           navigate(productUrl(productId));
         };
         const handleUpdate = (data: VariantUpdate) => {
-          if (!maybe(() => data.productVariantUpdate.productErrors.length)) {
+          if (!data.productVariantUpdate.productErrors.length) {
             notify({ text: intl.formatMessage(commonMessages.savedChanges) });
+          } else {
+            setErrors(data.productVariantUpdate.productErrors);
           }
         };
 
@@ -71,19 +77,7 @@ export const ProductVariant: React.FC<ProductUpdateProps> = ({
                 updateVariant.opts.loading ||
                 assignImage.opts.loading ||
                 unassignImage.opts.loading;
-              const formTransitionState = getMutationState(
-                updateVariant.opts.called,
-                updateVariant.opts.loading,
-                maybe(
-                  () =>
-                    updateVariant.opts.data.productVariantUpdate.productErrors
-                )
-              );
-              const removeTransitionState = getMutationState(
-                deleteVariant.opts.called,
-                deleteVariant.opts.loading,
-                maybe(() => deleteVariant.opts.data.productVariantDelete.errors)
-              );
+
               const handleImageSelect = (id: string) => () => {
                 if (variant) {
                   if (
@@ -107,13 +101,8 @@ export const ProductVariant: React.FC<ProductUpdateProps> = ({
                 <>
                   <WindowTitle title={maybe(() => data.productVariant.name)} />
                   <ProductVariantPage
-                    errors={maybe(
-                      () =>
-                        updateVariant.opts.data.productVariantUpdate
-                          .productErrors,
-                      []
-                    )}
-                    saveButtonBarState={formTransitionState}
+                    errors={errors}
+                    saveButtonBarState={updateVariant.opts.status}
                     loading={disableFormSave}
                     placeholderImage={placeholderImg}
                     variant={variant}
@@ -149,7 +138,7 @@ export const ProductVariant: React.FC<ProductUpdateProps> = ({
                     }}
                   />
                   <ProductVariantDeleteDialog
-                    confirmButtonState={removeTransitionState}
+                    confirmButtonState={deleteVariant.opts.status}
                     onClose={() =>
                       navigate(productVariantEditUrl(productId, variantId))
                     }

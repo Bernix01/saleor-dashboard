@@ -6,7 +6,11 @@ import urlJoin from "url-join";
 import { ConfirmButtonTransitionState } from "./components/ConfirmButton/ConfirmButton";
 import { APP_MOUNT_URI } from "./config";
 import { AddressType, AddressTypeInput } from "./customers/types";
-import { PartialMutationProviderOutput, UserError } from "./types";
+import {
+  PartialMutationProviderOutput,
+  UserError,
+  MutationResultAdditionalProps
+} from "./types";
 import {
   AddressInput,
   AuthorizationKeyType,
@@ -232,9 +236,25 @@ export function getMutationState(
   return "default";
 }
 
+interface SaleorMutationResult {
+  errors?: UserError[];
+}
+export function getMutationStatus<
+  TData extends Record<string, SaleorMutationResult | any>
+>(opts: MutationResult<TData>): ConfirmButtonTransitionState {
+  const errors = opts.data
+    ? Object.values(opts.data).reduce(
+        (acc: UserError[], mut) => [...acc, ...maybe(() => mut.errors, [])],
+        []
+      )
+    : [];
+
+  return getMutationState(opts.called, opts.loading, errors);
+}
+
 export function getMutationProviderData<TData, TVariables>(
   mutateFn: MutationFunction<TData, TVariables>,
-  opts: MutationResult<TData>
+  opts: MutationResult<TData> & MutationResultAdditionalProps
 ): PartialMutationProviderOutput<TData, TVariables> {
   return {
     mutate: variables => mutateFn({ variables }),
@@ -328,9 +348,22 @@ export function findInEnum<TEnum extends object>(
   throw new Error(`Key ${needle} not found in enum`);
 }
 
-export function parseBoolean(a: string): boolean {
+export function findValueInEnum<TEnum extends object>(
+  needle: string,
+  haystack: TEnum
+) {
+  const match = Object.entries(haystack).find(([_, value]) => value === needle);
+
+  if (!!match) {
+    return match[1] as TEnum;
+  }
+
+  throw new Error(`Value ${needle} not found in enum`);
+}
+
+export function parseBoolean(a: string, defaultValue: boolean): boolean {
   if (a === undefined) {
-    return true;
+    return defaultValue;
   }
   return a === "true";
 }

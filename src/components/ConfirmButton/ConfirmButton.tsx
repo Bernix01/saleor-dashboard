@@ -67,7 +67,7 @@ interface ConfirmButtonState {
   displayCompletedActionState: boolean;
 }
 
-const ConfirmButton = withStyles(styles)(
+const ConfirmButton = withStyles(styles, { name: "ConfirmButton" })(
   class ConfirmButtonComponent extends React.Component<
     ConfirmButtonProps &
       WithStyles<
@@ -75,6 +75,11 @@ const ConfirmButton = withStyles(styles)(
       >,
     ConfirmButtonState
   > {
+    state: ConfirmButtonState = {
+      displayCompletedActionState: false
+    };
+    timeout = null;
+
     static getDerivedStateFromProps(
       nextProps: ConfirmButtonProps,
       prevState: ConfirmButtonState
@@ -86,11 +91,6 @@ const ConfirmButton = withStyles(styles)(
       }
       return prevState;
     }
-
-    state: ConfirmButtonState = {
-      displayCompletedActionState: false
-    };
-    timeout = null;
 
     componentDidUpdate(prevProps: ConfirmButtonProps) {
       const { transitionState } = this.props;

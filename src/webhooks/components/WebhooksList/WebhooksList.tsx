@@ -14,42 +14,50 @@ import ResponsiveTable from "@saleor/components/ResponsiveTable";
 import Skeleton from "@saleor/components/Skeleton";
 import TablePagination from "@saleor/components/TablePagination";
 import { maybe, renderCollection, stopPropagation } from "@saleor/misc";
-import { ListProps } from "@saleor/types";
+import { ListProps, SortPage } from "@saleor/types";
+import { WebhookListUrlSortField } from "@saleor/webhooks/urls";
+import TableCellHeader from "@saleor/components/TableCellHeader";
+import { getArrowDirection } from "@saleor/utils/sort";
 import { Webhooks_webhooks_edges_node } from "../../types/Webhooks";
 
-export interface WebhooksListProps extends ListProps {
+export interface WebhooksListProps
+  extends ListProps,
+    SortPage<WebhookListUrlSortField> {
   webhooks: Webhooks_webhooks_edges_node[];
   onRemove: (id: string) => void;
 }
 
-const useStyles = makeStyles(theme => ({
-  [theme.breakpoints.up("lg")]: {
-    colAction: {
-      "& svg": {
-        color: theme.palette.primary.main
+const useStyles = makeStyles(
+  theme => ({
+    [theme.breakpoints.up("lg")]: {
+      colAction: {
+        "& svg": {
+          color: theme.palette.primary.main
+        },
+        textAlign: "right" as "right"
       },
-      textAlign: "right" as "right"
+      colActive: {},
+      colName: {
+        "&&": {
+          width: "auto"
+        }
+      }
     },
+    colAction: {},
     colActive: {},
     colName: {
-      "&&": {
-        width: "auto"
-      }
+      paddingLeft: 0,
+      width: 250
+    },
+    table: {
+      tableLayout: "fixed"
+    },
+    tableRow: {
+      cursor: "pointer"
     }
-  },
-  colAction: {},
-  colActive: {},
-  colName: {
-    paddingLeft: 0,
-    width: 250
-  },
-  table: {
-    tableLayout: "fixed"
-  },
-  tableRow: {
-    cursor: "pointer"
-  }
-}));
+  }),
+  { name: "WebhooksList" }
+);
 
 const numberOfColumns = 3;
 
@@ -59,8 +67,10 @@ const WebhooksList: React.FC<WebhooksListProps> = ({
   disabled,
   onNextPage,
   pageInfo,
+  sort,
   onRowClick,
   onRemove,
+  onSort,
   onUpdateListSettings,
   onPreviousPage
 }) => {
@@ -71,18 +81,35 @@ const WebhooksList: React.FC<WebhooksListProps> = ({
     <ResponsiveTable className={classes.table}>
       <TableHead>
         <TableRow>
-          <TableCell className={classes.colName}>
+          <TableCellHeader
+            direction={
+              sort.sort === WebhookListUrlSortField.name
+                ? getArrowDirection(sort.asc)
+                : undefined
+            }
+            arrowPosition="right"
+            onClick={() => onSort(WebhookListUrlSortField.name)}
+            className={classes.colName}
+          >
             {intl.formatMessage({
               defaultMessage: "Name",
               description: "webhook name"
             })}
-          </TableCell>
-          <TableCell className={classes.colActive}>
+          </TableCellHeader>
+          <TableCellHeader
+            direction={
+              sort.sort === WebhookListUrlSortField.serviceAccount
+                ? getArrowDirection(sort.asc)
+                : undefined
+            }
+            onClick={() => onSort(WebhookListUrlSortField.serviceAccount)}
+            className={classes.colActive}
+          >
             {intl.formatMessage({
               defaultMessage: "Service Account",
               description: "webhook service account"
             })}
-          </TableCell>
+          </TableCellHeader>
           <TableCell className={classes.colAction}>
             {intl.formatMessage({
               defaultMessage: "Action",

@@ -15,6 +15,7 @@ import usePaginator, {
 } from "@saleor/hooks/usePaginator";
 import { commonMessages } from "@saleor/intl";
 import useProductSearch from "@saleor/searches/useProductSearch";
+import createDialogActionHandlers from "@saleor/utils/handlers/dialogActionHandlers";
 import { getMutationState, maybe } from "../../misc";
 import { productUrl } from "../../products/urls";
 import { CollectionInput } from "../../types/globalTypes";
@@ -30,8 +31,8 @@ import { UnassignCollectionProduct } from "../types/UnassignCollectionProduct";
 import {
   collectionListUrl,
   collectionUrl,
-  CollectionUrlDialog,
-  CollectionUrlQueryParams
+  CollectionUrlQueryParams,
+  CollectionUrlDialog
 } from "../urls";
 
 interface CollectionDetailsProps {
@@ -54,22 +55,10 @@ export const CollectionDetails: React.FC<CollectionDetailsProps> = ({
     variables: DEFAULT_INITIAL_SEARCH_DATA
   });
 
-  const closeModal = () =>
-    navigate(
-      collectionUrl(id, {
-        ...params,
-        action: undefined
-      }),
-      true
-    );
-  const openModal = (action: CollectionUrlDialog) =>
-    navigate(
-      collectionUrl(id, {
-        ...params,
-        action
-      }),
-      false
-    );
+  const [openModal, closeModal] = createDialogActionHandlers<
+    CollectionUrlDialog,
+    CollectionUrlQueryParams
+  >(navigate, params => collectionUrl(id, params), params);
 
   const paginationState = createPaginationState(PAGINATE_BY, params);
 
@@ -195,31 +184,6 @@ export const CollectionDetails: React.FC<CollectionDetailsProps> = ({
                       .homepageCollectionUpdate.errors
                 )
               );
-              const assignTransitionState = getMutationState(
-                assignProduct.opts.called,
-                assignProduct.opts.loading,
-                maybe(
-                  () => assignProduct.opts.data.collectionAddProducts.errors
-                )
-              );
-              const unassignTransitionState = getMutationState(
-                unassignProduct.opts.called,
-                unassignProduct.opts.loading,
-                maybe(
-                  () =>
-                    unassignProduct.opts.data.collectionRemoveProducts.errors
-                )
-              );
-              const removeTransitionState = getMutationState(
-                removeCollection.opts.called,
-                removeCollection.opts.loading,
-                maybe(() => removeCollection.opts.data.collectionDelete.errors)
-              );
-              const imageRemoveTransitionState = getMutationState(
-                updateCollection.opts.called,
-                updateCollection.opts.loading,
-                maybe(() => updateCollection.opts.data.collectionUpdate.errors)
-              );
 
               const { loadNextPage, loadPreviousPage, pageInfo } = paginate(
                 maybe(() => data.collection.products.pageInfo),
@@ -268,12 +232,9 @@ export const CollectionDetails: React.FC<CollectionDetailsProps> = ({
                       <Button
                         color="primary"
                         onClick={() =>
-                          navigate(
-                            collectionUrl(id, {
-                              action: "unassign",
-                              ids: listElements
-                            })
-                          )
+                          openModal("unassign", {
+                            ids: listElements
+                          })
                         }
                       >
                         <FormattedMessage
@@ -288,7 +249,7 @@ export const CollectionDetails: React.FC<CollectionDetailsProps> = ({
                     toggleAll={toggleAll}
                   />
                   <AssignProductDialog
-                    confirmButtonState={assignTransitionState}
+                    confirmButtonState={assignProduct.opts.status}
                     open={params.action === "assign"}
                     onFetch={search}
                     loading={result.loading}
@@ -307,7 +268,7 @@ export const CollectionDetails: React.FC<CollectionDetailsProps> = ({
                     )}
                   />
                   <ActionDialog
-                    confirmButtonState={removeTransitionState}
+                    confirmButtonState={removeCollection.opts.status}
                     onClose={closeModal}
                     onConfirm={() => removeCollection.mutate({ id })}
                     open={params.action === "remove"}
@@ -331,7 +292,7 @@ export const CollectionDetails: React.FC<CollectionDetailsProps> = ({
                     </DialogContentText>
                   </ActionDialog>
                   <ActionDialog
-                    confirmButtonState={unassignTransitionState}
+                    confirmButtonState={unassignProduct.opts.status}
                     onClose={closeModal}
                     onConfirm={() =>
                       unassignProduct.mutate({
@@ -359,7 +320,7 @@ export const CollectionDetails: React.FC<CollectionDetailsProps> = ({
                     </DialogContentText>
                   </ActionDialog>
                   <ActionDialog
-                    confirmButtonState={imageRemoveTransitionState}
+                    confirmButtonState={updateCollection.opts.status}
                     onClose={closeModal}
                     onConfirm={() =>
                       updateCollection.mutate({
