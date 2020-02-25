@@ -55,7 +55,7 @@ export interface FormData {
   endTime: string;
   hasEndDate: boolean;
   hasUsageLimit: boolean;
-  minAmountSpent: string;
+  minSpent: string;
   minCheckoutItemsQuantity: string;
   requirementsPicker: RequirementsPicker;
   startDate: string;
@@ -132,7 +132,7 @@ const VoucherDetailsPage: React.FC<VoucherDetailsPageProps> = ({
   const intl = useIntl();
 
   let requirementsPickerInitValue;
-  if (maybe(() => voucher.minAmountSpent.amount) > 0) {
+  if (maybe(() => voucher.minSpent.amount) > 0) {
     requirementsPickerInitValue = RequirementsPicker.ORDER;
   } else if (maybe(() => voucher.minCheckoutItemsQuantity) > 0) {
     requirementsPickerInitValue = RequirementsPicker.ITEM;
@@ -152,11 +152,11 @@ const VoucherDetailsPage: React.FC<VoucherDetailsPageProps> = ({
     endTime: splitDateTime(maybe(() => voucher.endDate, "")).time,
     hasEndDate: maybe(() => !!voucher.endDate),
     hasUsageLimit: maybe(() => !!voucher.usageLimit),
-    minAmountSpent: maybe(() => voucher.minAmountSpent.amount.toString(), "0"),
     minCheckoutItemsQuantity: maybe(
       () => voucher.minCheckoutItemsQuantity.toString(),
       "0"
     ),
+    minSpent: maybe(() => voucher.minSpent.amount.toString(), "0"),
     requirementsPicker: requirementsPickerInitValue,
     startDate: splitDateTime(maybe(() => voucher.startDate, "")).date,
     startTime: splitDateTime(maybe(() => voucher.startDate, "")).time,
@@ -166,8 +166,8 @@ const VoucherDetailsPage: React.FC<VoucherDetailsPageProps> = ({
   };
 
   return (
-    <Form errors={errors} initial={initialForm} onSubmit={onSubmit}>
-      {({ change, data, errors: formErrors, hasChanged, submit }) => (
+    <Form initial={initialForm} onSubmit={onSubmit}>
+      {({ change, data, hasChanged, submit }) => (
         <Container>
           <AppHeader onBack={onBack}>
             {intl.formatMessage(sectionNames.vouchers)}
@@ -178,7 +178,7 @@ const VoucherDetailsPage: React.FC<VoucherDetailsPageProps> = ({
               <VoucherInfo
                 data={data}
                 disabled={disabled}
-                errors={formErrors}
+                errors={errors}
                 onChange={change}
                 variant="update"
               />
@@ -186,7 +186,7 @@ const VoucherDetailsPage: React.FC<VoucherDetailsPageProps> = ({
               <VoucherTypes
                 data={data}
                 disabled={disabled}
-                errors={formErrors}
+                errors={errors}
                 onChange={change}
               />
               <CardSpacer />
@@ -195,7 +195,7 @@ const VoucherDetailsPage: React.FC<VoucherDetailsPageProps> = ({
                   data={data}
                   disabled={disabled}
                   defaultCurrency={defaultCurrency}
-                  errors={formErrors}
+                  errors={errors}
                   onChange={change}
                   variant="update"
                 />
@@ -337,7 +337,7 @@ const VoucherDetailsPage: React.FC<VoucherDetailsPageProps> = ({
                 data={data}
                 disabled={disabled}
                 defaultCurrency={defaultCurrency}
-                errors={formErrors}
+                errors={errors}
                 onChange={change}
               />
               <CardSpacer />
@@ -345,7 +345,7 @@ const VoucherDetailsPage: React.FC<VoucherDetailsPageProps> = ({
                 data={data}
                 disabled={disabled}
                 defaultCurrency={defaultCurrency}
-                errors={formErrors}
+                errors={errors}
                 onChange={change}
               />
               <CardSpacer />
@@ -353,7 +353,7 @@ const VoucherDetailsPage: React.FC<VoucherDetailsPageProps> = ({
                 data={data}
                 disabled={disabled}
                 defaultCurrency={defaultCurrency}
-                errors={formErrors}
+                errors={errors}
                 onChange={change}
               />
             </div>

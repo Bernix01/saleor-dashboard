@@ -93,16 +93,13 @@ export const HomeProductList: React.FC<HomeProductListProps> = props => {
                       <Typography color={"textSecondary"}>
                         {maybe(() =>
                           variant.attributes
-                            .map(attribute => attribute.value.name)
+                            .map(attribute => attribute.values[0].name)
                             .join(" / ")
                         )}
                       </Typography>
                       <Typography color={"textSecondary"}>
                         <FormattedMessage
-                          defaultMessage="{amount, plural,
-                              one {One ordered}
-                              other {{amount} Ordered}
-                            }"
+                          defaultMessage="{amount, plural,one {One ordered}other {{amount} Ordered}}"
                           description="number of ordered products"
                           id="homeProductListCardOrders"
                           values={{

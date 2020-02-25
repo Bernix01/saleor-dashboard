@@ -14,6 +14,7 @@ import usePaginator, {
 } from "@saleor/hooks/usePaginator";
 import { commonMessages } from "@saleor/intl";
 import createDialogActionHandlers from "@saleor/utils/handlers/dialogActionHandlers";
+import NotFoundPage from "@saleor/components/NotFoundPage";
 import { PAGINATE_BY } from "../../config";
 import { maybe } from "../../misc";
 import { TypedProductBulkDeleteMutation } from "../../products/mutations";
@@ -67,9 +68,14 @@ export const CategoryDetails: React.FC<CategoryDetailsProps> = ({
   const paginationState = createPaginationState(PAGINATE_BY, params);
   const { data, loading, refetch } = useCategoryDetailsQuery({
     displayLoader: true,
-    require: ["category"],
     variables: { ...paginationState, id }
   });
+
+  const category = data?.category;
+
+  if (category === null) {
+    return <NotFoundPage onBack={() => navigate(categoryListUrl())} />;
+  }
 
   const handleCategoryDelete = (data: CategoryDelete) => {
     if (data.categoryDelete.errors.length === 0) {
@@ -298,7 +304,7 @@ export const CategoryDetails: React.FC<CategoryDetailsProps> = ({
             >
               <DialogContentText>
                 <FormattedMessage
-                  defaultMessage="Are you sure you want to delete {counter,plural,one{this category} other{{displayQuantity} categories}}?"
+                  defaultMessage="{counter,plural,one{Are you sure you want to delete this category?} other{Are you sure you want to delete {displayQuantity} categories?}}"
                   values={{
                     counter: maybe(() => params.ids.length),
                     displayQuantity: (
@@ -328,7 +334,7 @@ export const CategoryDetails: React.FC<CategoryDetailsProps> = ({
             >
               <DialogContentText>
                 <FormattedMessage
-                  defaultMessage="Are you sure you want to delete {counter,plural,one{this product} other{{displayQuantity} products}}?"
+                  defaultMessage="{counter,plural,one{Are you sure you want to delete this product?} other{Are you sure you want to delete {displayQuantity} products?}}"
                   values={{
                     counter: maybe(() => params.ids.length),
                     displayQuantity: (

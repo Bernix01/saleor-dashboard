@@ -23,6 +23,8 @@ import { ListViews } from "@saleor/types";
 import { getSortParams } from "@saleor/utils/sort";
 import createSortHandler from "@saleor/utils/handlers/sortHandler";
 import createDialogActionHandlers from "@saleor/utils/handlers/dialogActionHandlers";
+import useShop from "@saleor/hooks/useShop";
+import createFilterHandlers from "@saleor/utils/handlers/filterHandlers";
 import CollectionListPage from "../../components/CollectionListPage/CollectionListPage";
 import {
   TypedCollectionBulkDelete,
@@ -34,7 +36,6 @@ import { CollectionBulkPublish } from "../../types/CollectionBulkPublish";
 import {
   collectionAddUrl,
   collectionListUrl,
-  CollectionListUrlFilters,
   CollectionListUrlQueryParams,
   collectionUrl,
   CollectionListUrlDialog
@@ -45,8 +46,10 @@ import {
   getActiveFilters,
   getFilterTabs,
   getFilterVariables,
-  saveFilterTab
-} from "./filter";
+  saveFilterTab,
+  getFilterQueryParam,
+  getFilterOpts
+} from "./filters";
 import { getSortQueryVariables } from "./sort";
 
 interface CollectionListProps {
@@ -57,6 +60,7 @@ export const CollectionList: React.FC<CollectionListProps> = ({ params }) => {
   const navigate = useNavigator();
   const notify = useNotifier();
   const paginate = usePaginator();
+  const shop = useShop();
   const { isSelected, listElements, reset, toggle, toggleAll } = useBulkActions(
     params.ids
   );
@@ -88,16 +92,17 @@ export const CollectionList: React.FC<CollectionListProps> = ({ params }) => {
         : 0
       : parseInt(params.activeTab, 0);
 
-  const changeFilterField = (filter: CollectionListUrlFilters) => {
-    reset();
-    navigate(
-      collectionListUrl({
-        ...getActiveFilters(params),
-        ...filter,
-        activeTab: undefined
-      })
-    );
-  };
+  const [
+    changeFilters,
+    resetFilters,
+    handleSearchChange
+  ] = createFilterHandlers({
+    cleanupFn: reset,
+    createUrl: collectionListUrl,
+    getFilterQueryParam,
+    navigate,
+    params
+  });
 
   const [openModal, closeModal] = createDialogActionHandlers<
     CollectionListUrlDialog,
@@ -154,6 +159,7 @@ export const CollectionList: React.FC<CollectionListProps> = ({ params }) => {
   };
 
   const handleSort = createSortHandler(navigate, collectionListUrl, params);
+  const currencySymbol = maybe(() => shop.defaultCurrency, "USD");
 
   return (
     <TypedCollectionBulkDelete onCompleted={handleCollectionBulkDelete}>
@@ -162,11 +168,14 @@ export const CollectionList: React.FC<CollectionListProps> = ({ params }) => {
           {(collectionBulkPublish, collectionBulkPublishOpts) => (
             <>
               <CollectionListPage
+                currencySymbol={currencySymbol}
                 currentTab={currentTab}
+                filterOpts={getFilterOpts(params)}
                 initialSearch={params.query || ""}
-                onSearchChange={query => changeFilterField({ query })}
+                onSearchChange={handleSearchChange}
+                onFilterChange={changeFilters}
                 onAdd={() => navigate(collectionAddUrl)}
-                onAll={() => navigate(collectionListUrl())}
+                onAll={resetFilters}
                 onTabChange={handleTabChange}
                 onTabDelete={() => openModal("delete-search")}
                 onTabSave={() => openModal("save-search")}
@@ -251,7 +260,7 @@ export const CollectionList: React.FC<CollectionListProps> = ({ params }) => {
               >
                 <DialogContentText>
                   <FormattedMessage
-                    defaultMessage="Are you sure you want to publish {counter,plural,one{this collection} other{{displayQuantity} collections}}?"
+                    defaultMessage="{counter,plural,one{Are you sure you want to publish this collection?} other{Are you sure you want to publish {displayQuantity} collections?}}"
                     values={{
                       counter: maybe(() => params.ids.length),
                       displayQuantity: (
@@ -284,7 +293,7 @@ export const CollectionList: React.FC<CollectionListProps> = ({ params }) => {
               >
                 <DialogContentText>
                   <FormattedMessage
-                    defaultMessage="Are you sure you want to unpublish {counter,plural,one{this collection} other{{displayQuantity} collections}}?"
+                    defaultMessage="{counter,plural,one{Are you sure you want to unpublish this collection?} other{Are you sure you want to unpublish {displayQuantity} collections?}}"
                     values={{
                       counter: maybe(() => params.ids.length),
                       displayQuantity: (
@@ -316,7 +325,7 @@ export const CollectionList: React.FC<CollectionListProps> = ({ params }) => {
               >
                 <DialogContentText>
                   <FormattedMessage
-                    defaultMessage="Are you sure you want to delete {counter,plural,one{this collection} other{{displayQuantity} collections}}?"
+                    defaultMessage="{counter,plural,one{Are you sure you want to delete this collection?} other{Are you sure you want to delete {displayQuantity} collections?}}"
                     values={{
                       counter: maybe(() => params.ids.length),
                       displayQuantity: (

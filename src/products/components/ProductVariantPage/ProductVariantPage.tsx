@@ -28,7 +28,7 @@ import ProductVariantStock from "../ProductVariantStock";
 export interface ProductVariantPageFormData {
   costPrice: string;
   priceOverride: string;
-  quantity: number;
+  quantity: string;
   sku: string;
 }
 
@@ -53,7 +53,7 @@ interface ProductVariantPageProps {
 }
 
 const ProductVariantPage: React.FC<ProductVariantPageProps> = ({
-  errors: apiErrors,
+  errors,
   loading,
   header,
   placeholderImage,
@@ -92,7 +92,7 @@ const ProductVariantPage: React.FC<ProductVariantPageProps> = ({
   const initialForm: ProductVariantPageFormData = {
     costPrice: maybe(() => variant.costPrice.amount.toString(), ""),
     priceOverride: maybe(() => variant.priceOverride.amount.toString(), ""),
-    quantity: maybe(() => variant.quantity, 0),
+    quantity: maybe(() => variant.quantity.toString(), "0"),
     sku: maybe(() => variant.sku, "")
   };
 
@@ -109,13 +109,8 @@ const ProductVariantPage: React.FC<ProductVariantPageProps> = ({
           {maybe(() => variant.product.name)}
         </AppHeader>
         <PageHeader title={header} />
-        <Form
-          initial={initialForm}
-          errors={apiErrors}
-          onSubmit={handleSubmit}
-          confirmLeave
-        >
-          {({ change, data, errors, hasChanged, submit, triggerChange }) => {
+        <Form initial={initialForm} onSubmit={handleSubmit} confirmLeave>
+          {({ change, data, hasChanged, submit, triggerChange }) => {
             const handleAttributeChange: FormsetChange = (id, value) => {
               changeAttributeData(id, value);
               triggerChange();
@@ -143,7 +138,7 @@ const ProductVariantPage: React.FC<ProductVariantPageProps> = ({
                     <ProductVariantAttributes
                       attributes={attributes}
                       disabled={loading}
-                      errors={apiErrors}
+                      errors={errors}
                       onChange={handleAttributeChange}
                     />
                     <CardSpacer />

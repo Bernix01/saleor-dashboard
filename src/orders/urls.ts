@@ -17,9 +17,9 @@ const orderSectionUrl = "/orders";
 
 export const orderListPath = orderSectionUrl;
 export enum OrderListUrlFiltersEnum {
-  dateFrom = "dateFrom",
-  dateTo = "dateTo",
-  email = "email",
+  createdFrom = "createdFrom",
+  createdTo = "createdTo",
+  customer = "customer",
   payment = "payment",
   query = "query"
 }
@@ -55,6 +55,9 @@ export const orderListUrl = (params?: OrderListUrlQueryParams): string => {
 
 export const orderDraftListPath = urlJoin(orderSectionUrl, "drafts");
 export enum OrderDraftListUrlFiltersEnum {
+  createdFrom = "createdFrom",
+  createdTo = "createdTo",
+  customer = "customer",
   query = "query"
 }
 export type OrderDraftListUrlFilters = Filters<OrderDraftListUrlFiltersEnum>;

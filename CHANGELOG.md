@@ -23,6 +23,19 @@ All notable, unreleased changes to this project will be documented in this file.
 - Move mutation state to mutation - #297 by @dominik-zeglen
 - Add table sorting - #292 by @dominik-zeglen
 - Unify dialog handling - #296 by @dominik-zeglen
+- Stop using deprecated fields - #357 by @dominik-zeglen
+- Throw error when API_URI is not set - #375 by @dominik-zeglen
+- Fix variant stock input - #377 by @dominik-zeglen
+- Add filtering to views - #361 by @dominik-zeglen
+- Do not render password change if authenticating - #378 by @dominik-zeglen
+- Fix crash when one product is selected - #391 by @dominik-zeglen
+- Improve product update form error handling - #392 by @dominik-zeglen
+- Fix column picker errors - #393 by @dominik-zeglen
+- Improve order filters - #396 by @dominik-zeglen
+- Use structurized JSON files instead of PO - #403 by @dominik-zeglen
+- Remove PO files from repo and update translations #409 by @dominik-zeglen
+- Add optional chaining and explicitely return "Not found" page - #408 by @dominik-zeglen
+- Do not store errors in form component - #410 by @dominik-zeglen
 
 ## 2.0.0
 
